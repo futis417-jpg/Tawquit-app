@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -19,19 +20,44 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun QuranScreen(isSpanish: Boolean) {
-    var surahs by remember { mutableStateOf<List<Surah>?>(null) }
-    var selectedSurah by remember { mutableStateOf<SurahDetail?>(null) }
+    val context = LocalContext.current
+    val db = remember { QuranDatabase.getDatabase(context) }
+    val surahDao = db.surahDao()
+    
+    var surahs by remember { mutableStateOf<List<SurahEntity>?>(null) }
+    var selectedSurah by remember { mutableStateOf<SurahEntity?>(null) }
+    var ayahs by remember { mutableStateOf<List<AyahEntity>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
     
     val currentScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         if (surahs == null) {
-            try {
-                val response = RetrofitClient.api.getSurahs()
-                surahs = response.data
-            } catch (e: Exception) {
-                error = e.message
+            val localSurahs = surahDao.getAllSurahsDirect()
+            if (localSurahs.isNotEmpty()) {
+                surahs = localSurahs
+            } else {
+                isLoading = true
+                try {
+                    val response = RetrofitClient.api.getSurahs()
+                    val entities = response.data.map {
+                        SurahEntity(
+                            number = it.number,
+                            name = it.name,
+                            englishName = it.englishName,
+                            englishNameTranslation = it.englishNameTranslation,
+                            numberOfAyahs = it.numberOfAyahs,
+                            revelationType = it.revelationType
+                        )
+                    }
+                    surahDao.insertSurahs(entities)
+                    surahs = entities
+                } catch (e: Exception) {
+                    error = "Se requiere conexión a Internet para la primera descarga."
+                } finally {
+                    isLoading = false
+                }
             }
         }
     }
@@ -51,11 +77,38 @@ fun QuranScreen(isSpanish: Boolean) {
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            if (error != null) {
-                Text(text = "Error: $error", color = MaterialTheme.colorScheme.error)
-            } else if (surahs == null) {
+            if (isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-            } else {
+            } else if (error != null) {
+                Text(text = error!!, color = MaterialTheme.colorScheme.error)
+                Button(onClick = { 
+                    error = null
+                    currentScope.launch {
+                        isLoading = true
+                        try {
+                            val response = RetrofitClient.api.getSurahs()
+                            val entities = response.data.map {
+                                SurahEntity(
+                                    number = it.number,
+                                    name = it.name,
+                                    englishName = it.englishName,
+                                    englishNameTranslation = it.englishNameTranslation,
+                                    numberOfAyahs = it.numberOfAyahs,
+                                    revelationType = it.revelationType
+                                )
+                            }
+                            surahDao.insertSurahs(entities)
+                            surahs = entities
+                        } catch (e: Exception) {
+                            error = "Se requiere conexión a Internet."
+                        } finally {
+                            isLoading = false
+                        }
+                    }
+                }) {
+                    Text("Reintentar")
+                }
+            } else if (surahs != null) {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(surahs!!) { surah ->
                         Row(
@@ -64,11 +117,32 @@ fun QuranScreen(isSpanish: Boolean) {
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(MaterialTheme.colorScheme.surface)
                                 .clickable {
+                                    selectedSurah = surah
                                     currentScope.launch {
-                                        try {
-                                            selectedSurah = RetrofitClient.api.getSurah(surah.number).data
-                                        } catch (e: Exception) {
-                                            error = e.message
+                                        ayahs = null
+                                        val localAyahs = surahDao.getAyahsForSurahDirect(surah.number)
+                                        if (localAyahs.isNotEmpty()) {
+                                            ayahs = localAyahs
+                                        } else {
+                                            try {
+                                                val response = RetrofitClient.api.getSurah(surah.number)
+                                                val entities = response.data.ayahs.map {
+                                                    AyahEntity(
+                                                        id = it.number,
+                                                        surahNumber = surah.number,
+                                                        number = it.number,
+                                                        text = it.text,
+                                                        numberInSurah = it.numberInSurah,
+                                                        juz = it.juz,
+                                                        page = it.page
+                                                    )
+                                                }
+                                                surahDao.insertAyahs(entities)
+                                                ayahs = entities
+                                            } catch (e: Exception) {
+                                                selectedSurah = null
+                                                error = "Se requiere conexión a Internet para ver esta Surah la primera vez."
+                                            }
                                         }
                                     }
                                 }
@@ -100,7 +174,10 @@ fun QuranScreen(isSpanish: Boolean) {
         } else {
             // Surah Detail
             Button(
-                onClick = { selectedSurah = null },
+                onClick = { 
+                    selectedSurah = null 
+                    ayahs = null 
+                },
                 modifier = Modifier.padding(bottom = 16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
             ) {
@@ -117,18 +194,22 @@ fun QuranScreen(isSpanish: Boolean) {
             )
             Spacer(modifier = Modifier.height(24.dp))
             
-            LazyColumn {
-                items(selectedSurah!!.ayahs) { ayah ->
-                    Text(
-                        text = "${ayah.text} ﴿${ayah.numberInSurah}﴾",
-                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 24.sp, lineHeight = 40.sp),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        textAlign = TextAlign.Right,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp)
-                    )
-                    HorizontalDivider(color = MaterialTheme.colorScheme.surface)
+            if (ayahs == null) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            } else {
+                LazyColumn {
+                    items(ayahs!!) { ayah ->
+                        Text(
+                            text = "${ayah.text} ﴿${ayah.numberInSurah}﴾",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontSize = 24.sp, lineHeight = 40.sp),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Right,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp)
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.surface)
+                    }
                 }
             }
         }

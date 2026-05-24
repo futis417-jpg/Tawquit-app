@@ -10,6 +10,7 @@ import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 
+import android.app.PendingIntent
 import android.net.Uri
 
 class AdhanReceiver : BroadcastReceiver() {
@@ -32,16 +33,28 @@ class AdhanReceiver : BroadcastReceiver() {
                 .setUsage(AudioAttributes.USAGE_ALARM)
                 .build()
                 
-            channel.setSound(soundUri, audioAttributes)
+            channel.setSound(null, audioAttributes)
             notificationManager.createNotificationChannel(channel)
         }
+
+        val fullScreenIntent = Intent(context, AdhanActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra("PRAYER_NAME", prayerName)
+        }
+        val fullScreenPendingIntent = PendingIntent.getActivity(
+            context,
+            prayerName.hashCode(),
+            fullScreenIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
 
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(if (isSpanish(context)) "Es hora de rezar" else "حان وقت الصلاة")
             .setContentText(prayerName)
-            .setSound(soundUri)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setFullScreenIntent(fullScreenPendingIntent, true)
             .setAutoCancel(true)
             .build()
 

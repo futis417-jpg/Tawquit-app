@@ -8,6 +8,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -84,11 +86,20 @@ fun TawquitApp() {
         bottomBar = { BottomNavBar(isSpanish, currentScreen) { currentScreen = it } }
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
-            when (currentScreen) {
-                Screen.HORARIO -> HorarioScreen(isSpanish, onLanguageChange, prefs)
-                Screen.CORAN -> QuranScreen(isSpanish)
-                Screen.QIBLA -> QiblaScreen(isSpanish)
-                Screen.AJUSTES -> AjustesScreen(isSpanish, onLanguageChange)
+            AnimatedContent(
+                targetState = currentScreen,
+                label = "screen_transition",
+                transitionSpec = {
+                    (fadeIn(animationSpec = tween(300)) + slideInHorizontally { width -> width }) togetherWith
+                            (fadeOut(animationSpec = tween(300)) + slideOutHorizontally { width -> -width })
+                }
+            ) { targetScreen ->
+                when (targetScreen) {
+                    Screen.HORARIO -> HorarioScreen(isSpanish, onLanguageChange, prefs)
+                    Screen.CORAN -> QuranScreen(isSpanish)
+                    Screen.QIBLA -> QiblaScreen(isSpanish)
+                    Screen.AJUSTES -> AjustesScreen(isSpanish, onLanguageChange)
+                }
             }
         }
     }

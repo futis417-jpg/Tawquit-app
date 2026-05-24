@@ -4,13 +4,47 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    
     <path
         android:fillColor="#5E6D5E"
         android:pathData="M0,0h108v108h-108z" />
+        
+    <!-- Main Mosque Dome -->
     <path
         android:fillColor="#FDFBF7"
-        android:pathData="M 54 24 C 37.431 24 24 37.431 24 54 C 24 70.569 37.431 84 54 84 C 67.925 84 79.646 74.52 83.109 61.42 C 78.508 65.656 72.338 68.25 65.625 68.25 C 51.473 68.25 40 56.777 40 42.625 C 40 35.811 42.666 29.549 46.994 24.912 C 49.034 24.321 51.464 24 54 24 Z" />
+        android:pathData="M 54 36 C 42 36 32 50 32 68 C 32 70 34 72 36 72 L 72 72 C 74 72 76 70 76 68 C 76 50 66 36 54 36 Z" />
     <path
         android:fillColor="#EAB308"
-        android:pathData="M 68 36 L 70 42 L 76 43 L 71 47 L 73 53 L 68 50 L 63 53 L 65 47 L 60 43 L 66 42 Z" />
+        android:pathData="M 53 26 L 55 26 L 55 36 L 53 36 Z" />
+    <path
+        android:fillColor="#EAB308"
+        android:pathData="M 54 22 C 55.657 22 57 23.343 57 25 C 57 26.657 55.657 28 54 28 C 52.343 28 51 26.657 51 25 C 51 23.343 52.343 22 54 22 Z" />
+
+    <!-- Left Minaret -->
+    <path
+        android:fillColor="#FDFBF7"
+        android:pathData="M 22 46 L 28 46 L 28 72 L 22 72 Z" />
+    <path
+        android:fillColor="#FDFBF7"
+        android:pathData="M 20 46 L 30 46 L 30 48 L 20 48 Z" />
+    <path
+        android:fillColor="#EAB308"
+        android:pathData="M 25 36 L 28 46 L 22 46 Z" />
+    
+    <!-- Right Minaret -->
+    <path
+        android:fillColor="#FDFBF7"
+        android:pathData="M 80 46 L 86 46 L 86 72 L 80 72 Z" />
+    <path
+        android:fillColor="#FDFBF7"
+        android:pathData="M 78 46 L 88 46 L 88 48 L 78 48 Z" />
+    <path
+        android:fillColor="#EAB308"
+        android:pathData="M 83 36 L 86 46 L 80 46 Z" />
+
+    <!-- Mosque Doors -->
+    <path
+        android:fillColor="#5E6D5E"
+        android:pathData="M 46 62 C 46 58 50 54 54 54 C 58 54 62 58 62 62 L 62 72 L 46 72 Z" />
+
 </vector>

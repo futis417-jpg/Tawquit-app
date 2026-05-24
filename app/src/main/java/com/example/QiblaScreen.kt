@@ -30,12 +30,24 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.LocationServices
 import kotlin.math.*
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun QiblaScreen(isSpanish: Boolean) {
     val context = LocalContext.current
     var azimuth by remember { mutableFloatStateOf(0f) }
     var targetQibla by remember { mutableFloatStateOf(100f) } // Default fallback
+    
+    // Create animated azimuth handling the 360 wrap around
+    val animatedAzimuth by animateFloatAsState(
+        targetValue = azimuth,
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "azimuthAnimation"
+    )
 
     val locationPermissionsState = rememberMultiplePermissionsState(
         listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -85,7 +97,15 @@ fun QiblaScreen(isSpanish: Boolean) {
                     val orientation = FloatArray(3)
                     SensorManager.getOrientation(r, orientation)
                     val az = Math.toDegrees(orientation[0].toDouble()).toFloat()
-                    azimuth = (az + 360) % 360
+                    val newAzimuth = (az + 360) % 360
+                    
+                    // Prevent 360 jump
+                    if (newAzimuth - azimuth > 180) {
+                        azimuth += 360
+                    } else if (azimuth - newAzimuth > 180) {
+                        azimuth -= 360
+                    }
+                    azimuth = azimuth * 0.9f + newAzimuth * 0.1f // low pass filter
                 }
             }
 
@@ -147,7 +167,7 @@ fun QiblaScreen(isSpanish: Boolean) {
                 val radius = size.minDimension / 2 - 20.dp.toPx()
 
                 // Draw North
-                rotate(degrees = -azimuth) {
+                rotate(degrees = -animatedAzimuth) {
                     drawCircle(
                         color = Color.Red,
                         radius = 8.dp.toPx(),
@@ -156,7 +176,7 @@ fun QiblaScreen(isSpanish: Boolean) {
                 }
                 
                 // Draw Qibla (Kaaba)
-                rotate(degrees = targetQibla - azimuth) {
+                rotate(degrees = targetQibla - animatedAzimuth) {
                     drawCircle(
                         color = Color(0xFF10B981),
                         radius = 12.dp.toPx(),
