@@ -1,4 +1,4 @@
-name: Compilar APK de Downloader
+name: Compilar APK de Tawquit App
 
 on:
   push:
@@ -22,11 +22,14 @@ jobs:
     - name: Configurar Gradle en el Servidor
       uses: gradle/actions/setup-gradle@v4
 
-    - name: Generar archivo Keystore para depuracion
+    - name: Forzar generacion de Keystore limpia
       run: |
-        # Decodificamos la clave base64 integrada para crear el archivo debug.keystore físico
-        echo "${{ secrets.DEBUG_KEYSTORE_BASE64 }}" > debug.keystore.base64
-        base64 -d debug.keystore.base64 > debug.keystore || base64 --decode debug.keystore.base64 > debug.keystore
+        # Eliminamos el archivo corrupto antiguo para que no estorbe
+        rm -f debug.keystore
+        rm -f debug.keystore.base64
+        
+        # Creamos una clave debug completamente nueva compatible con Java 17
+        keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
     - name: Compilar la aplicacion con Gradle Nativo
       run: gradle assembleDebug
@@ -34,6 +37,6 @@ jobs:
     - name: Guardar el archivo APK resultante
       uses: actions/upload-artifact@v4
       with:
-        name: VideoDownloader-APK
+        name: Tawquit-APK
         path: |
           app/build/outputs/apk/debug/app-debug.apk
