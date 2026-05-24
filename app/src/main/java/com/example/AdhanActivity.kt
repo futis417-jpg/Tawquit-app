@@ -40,13 +40,13 @@ class AdhanActivity : ComponentActivity() {
         val prayerName = intent.getStringExtra("PRAYER_NAME") ?: "Prayer"
         
         try {
-            val alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            mediaPlayer = MediaPlayer.create(this, alarmSound)
-            mediaPlayer?.isLooping = true
-            mediaPlayer?.start()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+    // Reemplaza el sonido por defecto usando tu propio mp3 de la carpeta raw
+    mediaPlayer = MediaPlayer.create(this, R.raw.adhan)
+    mediaPlayer?.isLooping = false // Ponlo en true si quieres que se repita en bucle
+    mediaPlayer?.start()
+} catch (e: Exception) {
+    e.printStackTrace()
+}
 
         enableEdgeToEdge()
         setContent {
