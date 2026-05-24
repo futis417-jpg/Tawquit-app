@@ -39,10 +39,10 @@ class AdhanActivity : ComponentActivity() {
 
         val prayerName = intent.getStringExtra("PRAYER_NAME") ?: "Prayer"
         
-        try {
-    // Reemplaza el sonido por defecto usando tu propio mp3 de la carpeta raw
-    mediaPlayer = MediaPlayer.create(this, R.raw.adhan)
-    mediaPlayer?.isLooping = false // Ponlo en true si quieres que se repita en bucle
+       try {
+    // Especificamos el paquete com.example.R para asegurar que lo encuentre al compilar
+    mediaPlayer = MediaPlayer.create(this, com.example.R.raw.adhan)
+    mediaPlayer?.isLooping = true // ¡Te aconsejo dejarlo en true para que suene el Adhan entero sin cortarse!
     mediaPlayer?.start()
 } catch (e: Exception) {
     e.printStackTrace()
